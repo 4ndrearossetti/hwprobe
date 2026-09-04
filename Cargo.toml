@@ -1,0 +1,24 @@
+[package]
+name = "hwprobe"
+version = "0.1.0"
+edition = "2021"
+description = "Cross-platform hardware detection for local AI: RAM, GPUs, VRAM, unified memory"
+license = "MIT"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sysinfo = "0.31"
+nvml-wrapper = "0.10"
+
+[target.'cfg(target_os = "windows")'.dependencies]
+windows = { version = "0.58", features = [
+    "Win32_Graphics_Dxgi",
+    "Win32_Graphics_Dxgi_Common",
+    "Win32_Foundation",
+] }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+objc2 = "0.5"
+objc2-metal = { version = "0.2", features = ["MTLDevice"] }
+
