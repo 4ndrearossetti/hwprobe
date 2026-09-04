@@ -1,9 +1,13 @@
 [package]
 name = "hwprobe"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 description = "Cross-platform hardware detection for local AI: RAM, GPUs, VRAM, unified memory"
 license = "MIT"
+repository = "https://github.com/4ndrearossetti/hwprobe"
+readme = "README.md"
+keywords = ["hardware", "gpu", "vram", "detection", "llm"]
+categories = ["hardware-support", "command-line-utilities"]
 
 [dependencies]
 serde = { version = "1", features = ["derive"] }

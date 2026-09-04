@@ -24,11 +24,11 @@ mod imp {
                 continue;
             }
             let raw = std::fs::read(e.path().join("raw")).ok()?; // EACCES without root
-                                                                 // SMBIOS type 17: memory type at offset 0x12
-            if let Some(&code) = raw.get(0x12) {
-                if let Some(kind) = smbios_memory_type(code) {
-                    return Some(kind.to_string());
-                }
+            // SMBIOS type 17: memory type at offset 0x12
+            if let Some(&code) = raw.get(0x12)
+                && let Some(kind) = smbios_memory_type(code)
+            {
+                return Some(kind.to_string());
             }
         }
         None
