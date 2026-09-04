@@ -1,10 +1,28 @@
 # hwprobe
 
+[![crates.io](https://img.shields.io/crates/v/hwprobe.svg)](https://crates.io/crates/hwprobe)
+[![docs.rs](https://docs.rs/hwprobe/badge.svg)](https://docs.rs/hwprobe)
+[![CI](https://github.com/4ndrearossetti/hwprobe/actions/workflows/ci.yml/badge.svg)](https://github.com/4ndrearossetti/hwprobe/actions)
+
 Cross-platform hardware detection for local AI tooling: RAM, GPU(s), VRAM,
 unified memory and memory kind, on Windows, macOS and Linux.
 
 Built for the question every local-LLM launcher, installer and benchmark
 tool has to answer first: *what is this machine actually capable of running?*
+
+## Install
+
+As a library:
+
+```
+cargo add hwprobe
+```
+
+As a CLI:
+
+```
+cargo install hwprobe
+```
 
 ## Usage
 
@@ -32,7 +50,7 @@ $ hwprobe --json
     },
     {
       "vendor": "Intel",
-      "model": "PCI 0x8086 0x46a6",
+      "model": "Intel Corporation Alder Lake-P GT2 [Iris Xe Graphics]",
       "vram_mb": null,
       "shared": true,
       "state": "Ok",
@@ -65,10 +83,11 @@ Per vendor, probes run in order of authority, first success wins:
 1. **Vendor API** — NVML (dlopened from the NVIDIA driver): exact VRAM.
 2. **OS / kernel interface** — DXGI on Windows, Metal + `system_profiler`
    on macOS, `/sys/class/drm` on Linux.
-3. **Generic PCI enumeration** — vendor id only, no memory figures.
+3. **Generic PCI enumeration** — vendor and device ids, resolved to
+   readable names via an embedded `pci.ids` database; no memory figures.
 
 Every probe fails gracefully. Unknown or undriven hardware degrades to
-partial output (vendor-id-only, `null` fields) — never a panic. `ram_kind`
+partial output (id-only names, `null` fields) — never a panic. `ram_kind`
 is `null` on Linux without root by design: the DMI table needs privileges
 and a detection tool should never ask for them.
 
@@ -97,7 +116,7 @@ needs. Open an issue with:
 
 Each report becomes a fixture test.
 
-## Non-goals
+## Out of scope
 
 - Recommending models, computing "usable memory", driver install advice —
   those are opinions, and belong in tools built on top of hwprobe.
