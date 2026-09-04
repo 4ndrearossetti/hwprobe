@@ -126,4 +126,3 @@ Each report becomes a fixture test.
 ## License
 
 MIT
-
