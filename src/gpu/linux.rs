@@ -34,7 +34,7 @@ fn probe_at(root: &Path, nvml_succeeded: bool) -> Vec<GpuInfo> {
             }
             gpus.push(GpuInfo {
                 vendor,
-                model: pci_device_hint(&dev),
+                model: pci_device_name(&dev),
                 vram_mb: None,
                 shared: false,
                 state: GpuState::DriverMissing, // hardware present, NVML absent
@@ -51,7 +51,7 @@ fn probe_at(root: &Path, nvml_succeeded: bool) -> Vec<GpuInfo> {
         let shared = vram_mb.is_none_or(|v| v <= 1024);
         gpus.push(GpuInfo {
             vendor,
-            model: pci_device_hint(&dev),
+            model: pci_device_name(&dev),
             vram_mb,
             shared,
             state: GpuState::Ok,
@@ -66,12 +66,18 @@ fn read_hex_u16(p: &Path) -> Option<u16> {
     u16::from_str_radix(s.trim().trim_start_matches("0x"), 16).ok()
 }
 
-/// Without a pci.ids database, report "vendor 0xVVVV device 0xDDDD".
-/// Good enough for a hint; a pci.ids lookup is a later nicety.
-fn pci_device_hint(dev: &Path) -> String {
-    let v = fs::read_to_string(dev.join("vendor")).unwrap_or_default();
-    let d = fs::read_to_string(dev.join("device")).unwrap_or_default();
-    format!("PCI {} {}", v.trim(), d.trim())
+/// pci.ids lookup; falls back to raw ids for devices newer than the
+/// embedded database snapshot.
+fn pci_device_name(dev: &Path) -> String {
+    let vendor_id = read_hex_u16(&dev.join("vendor"));
+    let device_id = read_hex_u16(&dev.join("device"));
+    if let (Some(v), Some(d)) = (vendor_id, device_id) {
+        if let Some(device) = pci_ids::Device::from_vid_pid(v, d) {
+            return format!("{} {}", device.vendor().name(), device.name());
+        }
+        return format!("PCI {v:#06x} {d:#06x}");
+    }
+    "unknown PCI device".into()
 }
 
 #[cfg(test)]
