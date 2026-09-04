@@ -39,6 +39,7 @@ fn probe_at(root: &Path, nvml_succeeded: bool) -> Vec<GpuInfo> {
                 shared: false,
                 state: GpuState::DriverMissing, // hardware present, NVML absent
                 primary: false,
+                bandwidth_gb_s: None,
             });
             continue;
         }
@@ -56,6 +57,7 @@ fn probe_at(root: &Path, nvml_succeeded: bool) -> Vec<GpuInfo> {
             shared,
             state: GpuState::Ok,
             primary: false,
+            bandwidth_gb_s: None,
         });
     }
     gpus

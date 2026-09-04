@@ -24,6 +24,10 @@ pub struct GpuInfo {
     pub state: GpuState,
     /// Highest dedicated VRAM among detected GPUs
     pub primary: bool,
+    /// Estimated effective memory bandwidth, GB/s (decimal). From bus
+    /// width x memory clock (NVML) with a 0.85 derate; None where the
+    /// driver doesn't expose the inputs.
+    pub bandwidth_gb_s: Option<f64>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]

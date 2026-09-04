@@ -33,6 +33,7 @@ pub fn intel_mac_gpu(model: &str, vram_mb: Option<u64>) -> GpuInfo {
         vram_mb,
         state: GpuState::Ok,
         primary: false,
+        bandwidth_gb_s: None,
     }
 }
 
@@ -86,6 +87,7 @@ pub fn dxgi_gpu(
             GpuState::Ok
         },
         primary: false,
+        bandwidth_gb_s: None,
     })
 }
 
