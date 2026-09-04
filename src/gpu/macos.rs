@@ -73,7 +73,7 @@ pub fn probe_intel_mac() -> Vec<GpuInfo> {
                 GpuVendor::Other(0)
             };
             GpuInfo {
-                shared: vram_mb.map_or(true, |v| v <= 1536),
+                shared: vram_mb.is_none_or(|v| v <= 1536),
                 vendor,
                 model,
                 vram_mb,

@@ -44,7 +44,7 @@ pub fn probe(nvml_succeeded: bool) -> Vec<GpuInfo> {
             .and_then(|s| s.trim().parse::<u64>().ok())
             .map(|b| b / (1024 * 1024));
         // Heuristic: iGPUs (Intel non-Arc, AMD APU) report small/absent VRAM
-        let shared = vram_mb.map_or(true, |v| v <= 1024);
+        let shared = vram_mb.is_none_or(|v| v <= 1024);
         gpus.push(GpuInfo {
             vendor,
             model: pci_device_hint(&dev),
