@@ -34,8 +34,7 @@ fn metal_device_info() -> Option<(Option<String>, Option<u64>)> {
     Some((name, ws_mb))
 }
 
-/// Intel Macs: system_profiler. Rare and shrinking population; VRAM string
-/// parsing is best-effort.
+/// Intel Macs: system_profiler. Rare and shrinking population.
 pub fn probe_intel_mac() -> Vec<GpuInfo> {
     let Some(out) = Command::new("system_profiler")
         .args(["SPDisplaysDataType", "-json"])
@@ -44,52 +43,5 @@ pub fn probe_intel_mac() -> Vec<GpuInfo> {
     else {
         return vec![];
     };
-    let Ok(v) = serde_json::from_slice::<serde_json::Value>(&out.stdout) else {
-        return vec![];
-    };
-    let Some(cards) = v.get("SPDisplaysDataType").and_then(|c| c.as_array()) else {
-        return vec![];
-    };
-    cards
-        .iter()
-        .map(|c| {
-            let model = c
-                .get("sppci_model")
-                .and_then(|m| m.as_str())
-                .unwrap_or("GPU")
-                .to_string();
-            // "spdisplays_vram": "8 GB" / "1536 MB"
-            let vram_mb = c
-                .get("spdisplays_vram")
-                .and_then(|s| s.as_str())
-                .and_then(parse_vram_mb);
-            let vendor = if model.contains("Intel") {
-                GpuVendor::Intel
-            } else if model.contains("AMD") || model.contains("Radeon") {
-                GpuVendor::Amd
-            } else if model.contains("NVIDIA") || model.contains("GeForce") {
-                GpuVendor::Nvidia
-            } else {
-                GpuVendor::Other(0)
-            };
-            GpuInfo {
-                shared: vram_mb.is_none_or(|v| v <= 1536),
-                vendor,
-                model,
-                vram_mb,
-                state: GpuState::Ok,
-                primary: false,
-            }
-        })
-        .collect()
-}
-
-fn parse_vram_mb(s: &str) -> Option<u64> {
-    let mut parts = s.split_whitespace();
-    let n: u64 = parts.next()?.parse().ok()?;
-    match parts.next()? {
-        "GB" => Some(n * 1024),
-        "MB" => Some(n),
-        _ => None,
-    }
+    crate::gpu::heuristics::parse_intel_mac_json(&String::from_utf8_lossy(&out.stdout))
 }

@@ -1,3 +1,8 @@
+// Callers are cfg'd per-OS, so on every platform some of these functions
+// are "unused" outside tests — that's by design.
+#[allow(dead_code)]
+pub(crate) mod heuristics;
+
 mod nvidia;
 
 #[cfg(target_os = "linux")]

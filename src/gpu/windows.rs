@@ -1,5 +1,5 @@
 #![cfg(target_os = "windows")]
-use crate::types::{GpuInfo, GpuState, GpuVendor};
+use crate::types::GpuInfo;
 use windows::Win32::Graphics::Dxgi::{CreateDXGIFactory1, IDXGIFactory1};
 
 /// Probe 2 on Windows: DXGI adapter enumeration. All vendors,
@@ -17,30 +17,18 @@ pub fn probe(nvml_succeeded: bool) -> Vec<GpuInfo> {
         let Ok(desc) = (unsafe { adapter.GetDesc1() }) else {
             continue;
         };
-        // Skip "Microsoft Basic Render Driver" (software)
-        if desc.VendorId == 0x1414 {
-            continue;
-        }
-        let vendor = GpuVendor::from_pci_id(desc.VendorId as u16);
-        if vendor == GpuVendor::Nvidia && nvml_succeeded {
-            continue;
-        }
-        let dedicated_mb = (desc.DedicatedVideoMemory / (1024 * 1024)) as u64;
         let model = String::from_utf16_lossy(&desc.Description)
             .trim_end_matches('\0')
             .to_string();
-        gpus.push(GpuInfo {
-            vendor,
+        let dedicated_mb = (desc.DedicatedVideoMemory / (1024 * 1024)) as u64;
+        if let Some(g) = crate::gpu::heuristics::dxgi_gpu(
+            desc.VendorId as u16,
+            dedicated_mb,
             model,
-            vram_mb: (dedicated_mb > 0).then_some(dedicated_mb),
-            shared: dedicated_mb <= 1024, // iGPUs carve <=1 GB, rest is shared
-            state: if vendor == GpuVendor::Nvidia {
-                GpuState::DriverMissing
-            } else {
-                GpuState::Ok
-            },
-            primary: false,
-        });
+            nvml_succeeded,
+        ) {
+            gpus.push(g);
+        }
     }
     gpus
 }
