@@ -5,7 +5,7 @@
 [![CI](https://github.com/4ndrearossetti/hwprobe/actions/workflows/ci.yml/badge.svg)](https://github.com/4ndrearossetti/hwprobe/actions)
 
 Cross-platform hardware detection for local AI tooling: RAM, GPU(s), VRAM,
-unified memory and memory kind, on Windows, macOS and Linux.
+unified memory, memory kind and memory bandwidth, on Windows, macOS and Linux.
 
 Built for the question every local-LLM launcher, installer and benchmark
 tool has to answer first: *what is this machine actually capable of running?*
@@ -47,6 +47,7 @@ $ hwprobe --json
       "shared": false,
       "state": "Ok",
       "primary": true
+      "bandwidth_gb_s": 326.4544
     },
     {
       "vendor": "Intel",
@@ -55,6 +56,7 @@ $ hwprobe --json
       "shared": true,
       "state": "Ok",
       "primary": false
+      "bandwidth_gb_s": null
     }
   ],
   "unified_memory": false,
@@ -66,6 +68,11 @@ Field notes:
 
 - `vram_mb: null` + `shared: true` — an iGPU borrowing system RAM; there is
   no dedicated VRAM to report.
+- `bandwidth_gb_s` — estimated effective memory bandwidth in GB/s: vendor
+  data (NVML bus width × memory clock on NVIDIA, a per-chip table on Apple
+  Silicon) with a 0.85 real-world derate. The number a decode-speed model
+  should use. `null` where undeterminable (AMD, Intel iGPUs, unknown
+  chips), consumers should fall back to their own class constants.
 - `unified_memory: true` (Apple Silicon) — CPU and GPU share `ram_mb`;
   `metal_max_working_set_mb` is Metal's own figure for how much of it the
   GPU may use, the number that matters for model sizing.
@@ -80,7 +87,8 @@ Field notes:
 
 Per vendor, probes run in order of authority, first success wins:
 
-1. **Vendor API** — NVML (dlopened from the NVIDIA driver): exact VRAM.
+1. Vendor API — NVML (dlopened from the NVIDIA driver): exact VRAM,
+   bandwidth estimate from bus width × memory clock.
 2. **OS / kernel interface** — DXGI on Windows, Metal + `system_profiler`
    on macOS, `/sys/class/drm` on Linux.
 3. **Generic PCI enumeration** — vendor and device ids, resolved to
@@ -96,7 +104,7 @@ and a detection tool should never ask for them.
 | Platform | GPU detection | Notes |
 |---|---|---|
 | Windows 10+ | NVML → DXGI | all vendors; iGPUs marked `shared` |
-| macOS 11+ (Apple Silicon) | Metal | unified memory + working-set size |
+| macOS 11+ (Apple Silicon) | Metal | unified memory, working-set size, per-chip bandwidth |
 | macOS 11+ (Intel) | `system_profiler` | iGPU/dGPU incl. AMD |
 | Linux | NVML → sysfs (`amdgpu`, `i915`/`xe`) → PCI ids | `DriverMissing` detection for NVIDIA |
 
