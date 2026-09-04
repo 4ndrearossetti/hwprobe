@@ -24,7 +24,7 @@ mod imp {
                 continue;
             }
             let raw = std::fs::read(e.path().join("raw")).ok()?; // EACCES without root
-            // SMBIOS type 17: memory type at offset 0x12
+                                                                 // SMBIOS type 17: memory type at offset 0x12
             if let Some(&code) = raw.get(0x12) {
                 if let Some(kind) = smbios_memory_type(code) {
                     return Some(kind.to_string());
@@ -89,20 +89,25 @@ mod imp {
             .ok()?;
         let v: serde_json::Value = serde_json::from_slice(&out.stdout).ok()?;
         let items = v.get("SPMemoryDataType")?.as_array()?;
-        // Apple Silicon: dimm_type at top level; Intel Macs: nested _items
+        // Apple Silicon: dimm_type at top level; Intel Macs: nested _items.
+        // VMs report the literal string "unknown" — treat as undetected.
         for item in items {
             if let Some(t) = item.get("dimm_type").and_then(|t| t.as_str()) {
-                return Some(t.to_string());
+                return valid_kind(t);
             }
             if let Some(sub) = item.get("_items").and_then(|s| s.as_array()) {
                 for dimm in sub {
                     if let Some(t) = dimm.get("dimm_type").and_then(|t| t.as_str()) {
-                        return Some(t.to_string());
+                        return valid_kind(t);
                     }
                 }
             }
         }
         None
+    }
+
+    fn valid_kind(t: &str) -> Option<String> {
+        (!t.eq_ignore_ascii_case("unknown")).then(|| t.to_string())
     }
 }
 
